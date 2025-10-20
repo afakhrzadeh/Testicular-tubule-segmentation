@@ -1,0 +1,78 @@
+DATASET:
+  IMAGE_FORMAT: ".png"
+
+  # TRAIN_PATH: "/home/jovyan/work/Histology project/histology/tube_segmentation/data/imgs_png"
+  # TRAIN_MASK_PATH: "/home/jovyan/work/Histology project/histology/tube_segmentation/data/"
+#   TEST_PATH: "/home/jovyan/work/Histology project/histology/tube_segmentation/data/test/imgs_png"
+#   TEST_MASK_PATH: "/home/jovyan/work/Histology project/histology/tube_segmentation/data/test/mask"
+  
+  # TRAIN_TYPE: "RAI_dataset"
+  
+  # MASK_OBJECTS_DF: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/mask_objects.csv"
+  # MASK_OBJECTS_DF: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/mask_objects_just_objects.csv"
+  
+  # MASK_OBJECTS_DF: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/mask_objects_just_all_gland.csv"
+  
+  # TRAIN_PATH: "/home/jovyan/work/Histology project/histology/GLAS/Train Folder/img"
+  # TRAIN_MASK_PATH: "/home/jovyan/work/Histology project/histology/GLAS/Train Folder/labelcol"
+  
+  TRAIN_PATH: "/home/jovyan/work/Histology project/histology/GLAS/Train_Validation Folder/img"
+  TRAIN_MASK_PATH: "/home/jovyan/work/Histology project/histology/GLAS/Train_Validation Folder/labelcol"
+  TRAIN_TYPE: "Glas_dataset"
+  
+  # MASK_OBJECTS_DF: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/mask_objects_glas_Train.csv"
+  # MASK_OBJECTS_DF: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/mask_objects_glas_Train_just_all_gland.csv"
+  
+  # MASK_OBJECTS_DF: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/mask_objects_glas_Train_just_all_gland_train_validation.csv"
+  
+  MASK_OBJECTS_DF: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/mask_objects_glas_Train_objects_and_just_all_gland_train_validation.csv"
+  
+
+TRAIN:
+  gamma: 2
+  teta: 0.3
+  alpha: 0.25
+  BATCH_SIZE: 1
+  NUM_EPOCHS: 50
+  iter: 5
+  # LEARNING_RATE: 0.008
+  # LEARNING_RATE: 0.08
+  # LEARNING_RATE: 0.0008
+  LEARNING_RATE: 0.0001
+  # LEARNING_RATE: 0.000001
+  # LEARNING_RATE: 0.001
+  Fold: 1
+  Seed: 42
+  warm_up: 0
+  w_bce: 0
+  w_focal: 5
+  w_tversky: 0
+  w_dice: 0
+  w_iou: 1
+  val_split: 0.20
+  
+MODEL:
+  model_type: "vit_l"
+  sam_checkpoint: "/home/jovyan/work/Alborz/SAM_and_UNI/segment-anything/checkpoints/sam_vit_l_0b3195.pth"
+  
+  # model_type: "vit_b"
+  # sam_checkpoint: "/home/jovyan/work/Alborz/SAM_and_UNI/segment-anything/checkpoints/sam_vit_b_01ec64.pth"
+  
+  uni_checkpoint: "/home/jovyan/work/Alborz/SAM_and_UNI/segment-anything/uni_checkpoints/pytorch_model.bin"
+  save_path: "./output/best_models"
+  neck_checkpoint: "./output/best_models/train_neck.pth"
+  model_encoder: "UNI"
+  # model_encoder: "SAM"
+  mode: "train"
+  # sam_checkpoint: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/output/best_models/best_model_just_all_gland_50epoch(19)_sam_multi_mask_bce+tversky_best_eval_loss_with_image_augmentation.pth"
+  # sam_checkpoint: "/home/jovyan/work/Alborz/SAM_and_UNI/version_2/output/best_models/Glas_best_model_just_all_gland_100epoch_sam_multi_mask_5focal+iou_accuracy_with_image_augmentation.pth"
+  # mode: "reTrain"
+  
+TEST:
+  checkpoint: "./output/best_models/best_model_.pth" 
+  # checkpoint: "./output/best_models/best_model_multi_output.pth"
+  BATCH_SIZE: 1
+  all_sam_checkpoint: "./output/best_models/best_model.pth"
+  sam_checkpoint: "./output/best_models/SAM.pth"
+  uni_checkpoint: "./output/best_models/UNI.pth"
+  neck_checkpoint: "./output/best_models/neck.pth"
