@@ -22,7 +22,7 @@ To evaluate the suggested method's generalization capability, we tested it on hi
 
 Below is the flowchart illustrating the overall architecture of our proposed method.
 
-![Model Flowchart](Fakhr1_flow.pdf)
+![Model Flowchart](Fakhr1_flow.png)
 
 ---
 
