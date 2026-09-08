@@ -15,18 +15,6 @@ def calculate_loss(targets: torch.Tensor, pred: np.ndarray, sam_iou: np.ndarray,
     Returns:
         sam loss
     """
-    # print(f"\nsam IOU {sam_iou} {type(sam_iou)}  {sam_iou.shape}")
-    # Convert numpy arrays to PyTorch tensors
-    
-    # pred_tensor = torch.tensor(pred, dtype=torch.float32, requires_grad=True).to(device)
-    # sam_iou_tensor = torch.tensor(sam_iou, dtype=torch.float32, requires_grad=True).to(device)
-    
-    # Calculate IOU
-        
-    # Compute loss
-    # mse_loss = nn.MSELoss()(iou, sam_iou)  # Instantiate MSELoss and call it
-    
-    
     targets = targets.unsqueeze(0)
 
     bce_loss, focal_loss, dice_loss, tversky_loss, iou_loss = 0.0, 0.0, 0.0, 0.0, 0.0
@@ -108,7 +96,6 @@ def Dice_loss(targets: torch.Tensor, pred: torch.Tensor, smooth=1e-3):
 
     """
     probs = torch.sigmoid(pred)
-    # probs = F.softmax(pred, dim=1)
     targets = targets.float()
 
     # Flatten the tensors
@@ -171,10 +158,6 @@ def Accuracy(binary_preds, targets):
     tn = ((binary_preds == 0) & (targets == 0)).sum().item()
     fp = ((binary_preds != 0) & (targets == 0)).sum().item()
     fn = ((binary_preds == 0) & (targets != 0)).sum().item()
-    # print(f"\n --> tp {tp} tn {tn} fp {fp} fn {fn} acc {float((tp + tn) / (tp + fp + tn + fn))}")
-    # print(binary_preds)
-    # print(targets)
-    # assert 1 == 2
     return float((tp + tn) / (tp + fp + tn + fn))
 
 def get_fp_fn(binary_preds, targets):
@@ -218,5 +201,4 @@ def get_fp_fn(binary_preds, targets):
 
     fn = (binary_preds == 0) & (targets == 1)
 
-    # return fp, fn
     return sample_points(fp, fn)
