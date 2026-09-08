@@ -108,18 +108,11 @@ class uni_image_encoder(nn.Module):
             uni_kwargs = {
                 'model_name': 'vit_large_patch16_224',
                 'img_size': 224, 
-                # 'patch_size': self.patch_size, 
                 'init_values': 1e-5, 
                 'num_classes': 0, 
                 'dynamic_img_size': True
             }
             self.model = timm.create_model(**uni_kwargs)
-            
-            ''' select all the forward features from UNI image encoder
-                because UNI just output the head for classification we add this line
-            '''
-            self.model.forward_features = lambda res: self.model.patch_embed(res)
-            
             self.neck = nn.Sequential(
                         nn.Conv2d(
                             self.embed_dim,
@@ -141,10 +134,23 @@ class uni_image_encoder(nn.Module):
         else:
             return None, None
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x should be (batch_size, 3, 224, 224)
+    def forward_before_neck(self, x: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
-            features = self.model.forward_features(x)
-            features  = self.neck(features.permute(0, 3, 1, 2))
+            tokens = self.model.forward_features(x)
+            tokens = tokens[:, 1:, :]
+            B, N, C = tokens.shape
+            H = W = int(N ** 0.5)
+            assert H * W == N
+            features = tokens.reshape(B, H, W, C)
+            self.features_before_neck = features
+        return features
+    
+    def forward_after_neck(self, x: torch.Tensor) -> torch.Tensor:
+        features  = self.neck(x.permute(0, 3, 1, 2))
+        return features
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        self.features_before_neck = self.forward_before_neck(x)
+        features = self.forward_after_neck(self.features_before_neck)
         return features
     
