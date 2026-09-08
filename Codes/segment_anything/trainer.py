@@ -57,12 +57,11 @@ class SamTrainer:
             image = image[..., ::-1]
 
         input_image_torch = image
-        # input_image_torch = input_image_torch.permute(2, 0, 1).contiguous()[None, :, :, :]
         self.original_size = original_image_size[2:]
 
         self.set_torch_image(input_image_torch)
 
-    @torch.no_grad()
+    # @torch.no_grad()
     def set_torch_image(
         self,
         transformed_image: torch.Tensor,
@@ -84,7 +83,17 @@ class SamTrainer:
         self.reset_image()
 
         self.input_size = tuple(transformed_image.shape[-2:])
-        self.features = self.model.image_encoder(transformed_image)
+        #  =====================================================
+        # we changed this for fine-tuning the neck, so check image encoder for the changes
+        # this code just give us  features for before the neck    
+        # self.features = self.model.image_encoder(transformed_image)
+        with torch.no_grad():
+            self.backbone_features = self.model.image_encoder.forward_before_neck(
+                transformed_image
+            )
+        self.create_features()
+        #  ------------------------
+
         if self.edge:
             sobel = SimpleEdgeSobel(device=transformed_image.device)
             edge_map = sobel.get_edge(transformed_image)  # [B, 1, 64, 64]
@@ -95,7 +104,15 @@ class SamTrainer:
             self.features = self.features * (1 + alpha * edge_map) 
             
         self.is_image_set = True
-
+        
+     #  =====================================================
+    # we changed this for fine-tuning the neck, so check image encoder for the changes
+    # this code just give us  features for before the neck         
+    def create_features(self):
+        self.features = self.model.image_encoder.forward_after_neck(
+            self.backbone_features
+        )
+# ----------------------------------
     def train_model(
         self,
         point_coords: Optional[np.ndarray] = None,
@@ -167,18 +184,7 @@ class SamTrainer:
             return_logits=return_logits,
         )
         
-#         print(f"\n masks {masks.shape}  {type(masks)}    masks[0] {masks[0].shape}")
-#         print(f"\n iou_predictions {iou_predictions.shape}  {type(iou_predictions)}    iou_predictions[0] {iou_predictions[0].shape}")
-#         print(f"\n low_res_masks {low_res_masks.shape}  {type(low_res_masks)}    low_res_masks[0] {low_res_masks[0].shape}")
-        
-#         assert 1 == 9
         binary_mask = masks > self.model.mask_threshold
-        # binary_mask_np = binary_mask[0].detach().cpu().numpy()
-        # masks_np = masks[0].detach().cpu().numpy()
-        # iou_predictions_np = iou_predictions[0].detach().cpu().numpy()
-        # low_res_masks_np = low_res_masks[0].detach().cpu().numpy()
-        # return masks_np, iou_predictions_np, low_res_masks_np, binary_mask_np
-        
         
         return masks, iou_predictions, low_res_masks, binary_mask
 
@@ -236,12 +242,28 @@ class SamTrainer:
             points = None
 
         # Embed prompts
-        sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
-            points=points,
-            boxes=boxes,
-            masks=mask_input,
-        )
+        if self.model.trainable_prompt:
+            B = self.features.shape[0]
+
+            sparse_embeddings = self.learnable_prompt.expand(B, -1, -1)
+
+            dense_embeddings = torch.zeros(
+                B,
+                256,
+                self.features.shape[-2],
+                self.features.shape[-1],
+                device=self.features.device
+            )
+        else:
+            sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
+                points=points,
+                boxes=boxes,
+                masks=mask_input,
+            )
         
+        image_embeddings = self.model.image_encoder.forward_after_neck(
+                                                                        self.backbone_features
+                                                                    )
         # Predict masks
         low_res_masks_, iou_predictions_ = self.model.mask_decoder(
             image_embeddings=self.features,
